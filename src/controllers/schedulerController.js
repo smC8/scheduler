@@ -7,11 +7,20 @@ import {
   resumeQueue,
   deleteQueue,
   getQueueJobs,
+  queues,
 } from "../scheduler.js";
 
-const queues = new Map();
+const queuesMap = new Map();
+
+// Setup Bull-Board
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath("/admin/queues");
+
+const { addQueue } = createBullBoard({
+  queues: Array.from(queues.values()).map((queue) => new BullMQAdapter(queue)),
+  serverAdapter: serverAdapter,
+});
+
 const queueArray = [];
 /**
  * List all schedulers for a tenant.
@@ -23,10 +32,10 @@ const queueArray = [];
  */
 export const listSchedulers = (req, res) => {
   const { tenantId } = req.params;
-  if (!queues.has(tenantId)) {
+  if (!queuesMap.has(tenantId)) {
     return res.status(404).json({ message: "Tenant not found" });
   }
-  const tenantQueues = queues.get(tenantId);
+  const tenantQueues = queuesMap.get(tenantId);
   res.status(200).json([...tenantQueues.keys()]);
 };
 
@@ -41,10 +50,10 @@ export const listSchedulers = (req, res) => {
  */
 export const getScheduler = async (req, res) => {
   const { tenantId, queueName } = req.params;
-  if (!queues.has(tenantId) || !queues.get(tenantId).has(queueName)) {
+  if (!queuesMap.has(tenantId) || !queuesMap.get(tenantId).has(queueName)) {
     return res.status(404).json({ message: "Scheduler not found" });
   }
-  const queue = queues.get(tenantId).get(queueName);
+  const queue = queuesMap.get(tenantId).get(queueName);
   const jobs = await getQueueJobs(queue);
   res.status(200).json(jobs);
 };
@@ -61,22 +70,21 @@ export const getScheduler = async (req, res) => {
  */
 export const createScheduler = (req, res) => {
   const { tenantId } = req.params;
-  // console.log("tennantid =======", req.params.tenantId);
   const { queueName } = req.body;
-  if (!queues.has(tenantId)) {
-    queues.set(tenantId, new Map());
+  if (!queuesMap.has(tenantId)) {
+    queuesMap.set(tenantId, new Map());
   }
-  if (queues.get(tenantId).has(queueName)) {
+  if (queuesMap.get(tenantId).has(queueName)) {
     return res.status(400).json({ message: "Scheduler already exists" });
   }
-  const queue = initializeTenantQueue(tenantId, queueName);
-  queues.get(tenantId).set(queueName, queue);
-  queueArray.push(new BullMQAdapter(queue));
 
-  const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
-    queues: queueArray,
-    serverAdapter: serverAdapter,
-  });
+  const queue = initializeTenantQueue(tenantId, queueName);
+  queuesMap.get(tenantId).set(queueName, queue);
+
+  // Update Bull-Board with the new queue
+  addQueue(new BullMQAdapter(queue));
+
+  queueArray.push(new BullMQAdapter(queue));
 
   res.status(201).json({ message: "Scheduler created successfully" });
 };
@@ -95,18 +103,18 @@ export const updateScheduler = async (req, res) => {
   const { tenantId, queueName } = req.params;
   const { newQueueName } = req.body;
 
-  if (!queues.has(tenantId) || !queues.get(tenantId).has(queueName)) {
+  if (!queuesMap.has(tenantId) || !queuesMap.get(tenantId).has(queueName)) {
     return res.status(404).json({ message: "Scheduler not found" });
   }
 
   // Pause the existing scheduler
-  const queue = queues.get(tenantId).get(queueName);
+  const queue = queuesMap.get(tenantId).get(queueName);
   await pauseQueue(queue);
 
   // Rename the queue in the map
   const updatedQueue = initializeTenantQueue(tenantId, newQueueName);
-  queues.get(tenantId).delete(queueName);
-  queues.get(tenantId).set(newQueueName, updatedQueue);
+  queuesMap.get(tenantId).delete(queueName);
+  queuesMap.get(tenantId).set(newQueueName, updatedQueue);
 
   res.status(200).json({ message: "Scheduler updated successfully" });
 };
@@ -114,13 +122,13 @@ export const updateScheduler = async (req, res) => {
 export const deleteScheduler = async (req, res) => {
   const { tenantId, queueName } = req.params;
 
-  if (!queues.has(tenantId) || !queues.get(tenantId).has(queueName)) {
+  if (!queuesMap.has(tenantId) || !queuesMap.get(tenantId).has(queueName)) {
     return res.status(404).json({ message: "Scheduler not found" });
   }
 
-  const queue = queues.get(tenantId).get(queueName);
+  const queue = queuesMap.get(tenantId).get(queueName);
   await deleteQueue(queue);
-  queues.get(tenantId).delete(queueName);
+  queuesMap.get(tenantId).delete(queueName);
 
   res.status(200).json({ message: "Scheduler deleted successfully" });
 };
@@ -128,11 +136,11 @@ export const deleteScheduler = async (req, res) => {
 export const pauseScheduler = async (req, res) => {
   const { tenantId, queueName } = req.params;
 
-  if (!queues.has(tenantId) || !queues.get(tenantId).has(queueName)) {
+  if (!queuesMap.has(tenantId) || !queuesMap.get(tenantId).has(queueName)) {
     return res.status(404).json({ message: "Scheduler not found" });
   }
 
-  const queue = queues.get(tenantId).get(queueName);
+  const queue = queuesMap.get(tenantId).get(queueName);
   await pauseQueue(queue);
 
   res.status(200).json({ message: "Scheduler paused successfully" });
@@ -141,11 +149,11 @@ export const pauseScheduler = async (req, res) => {
 export const resumeScheduler = async (req, res) => {
   const { tenantId, queueName } = req.params;
 
-  if (!queues.has(tenantId) || !queues.get(tenantId).has(queueName)) {
+  if (!queuesMap.has(tenantId) || !queuesMap.get(tenantId).has(queueName)) {
     return res.status(404).json({ message: "Scheduler not found" });
   }
 
-  const queue = queues.get(tenantId).get(queueName);
+  const queue = queuesMap.get(tenantId).get(queueName);
   await resumeQueue(queue);
 
   res.status(200).json({ message: "Scheduler resumed successfully" });
@@ -154,11 +162,11 @@ export const resumeScheduler = async (req, res) => {
 export const listJobs = async (req, res) => {
   const { tenantId, queueName } = req.params;
 
-  if (!queues.has(tenantId) || !queues.get(tenantId).has(queueName)) {
+  if (!queuesMap.has(tenantId) || !queuesMap.get(tenantId).has(queueName)) {
     return res.status(404).json({ message: "Scheduler not found" });
   }
 
-  const queue = queues.get(tenantId).get(queueName);
+  const queue = queuesMap.get(tenantId).get(queueName);
   const jobs = await queue.getJobs();
   res.status(200).json(jobs);
 };
@@ -166,11 +174,11 @@ export const listJobs = async (req, res) => {
 export const getJob = async (req, res) => {
   const { tenantId, queueName, jobId } = req.params;
 
-  if (!queues.has(tenantId) || !queues.get(tenantId).has(queueName)) {
+  if (!queuesMap.has(tenantId) || !queuesMap.get(tenantId).has(queueName)) {
     return res.status(404).json({ message: "Scheduler not found" });
   }
 
-  const queue = queues.get(tenantId).get(queueName);
+  const queue = queuesMap.get(tenantId).get(queueName);
   const job = await queue.getJob(jobId);
 
   if (!job) {
@@ -184,11 +192,11 @@ export const createJob = async (req, res) => {
   const { tenantId, queueName } = req.params;
   const { jobName, jobData, scheduleTime, cron, limit } = req.body;
 
-  if (!queues.has(tenantId) || !queues.get(tenantId).has(queueName)) {
+  if (!queuesMap.has(tenantId) || !queuesMap.get(tenantId).has(queueName)) {
     return res.status(404).json({ message: "Scheduler not found" });
   }
 
-  const queue = queues.get(tenantId).get(queueName);
+  const queue = queuesMap.get(tenantId).get(queueName);
 
   let job;
   if (cron) {
@@ -208,11 +216,11 @@ export const updateJob = async (req, res) => {
   const { tenantId, queueName, jobId } = req.params;
   const { jobName, jobData, scheduleTime, cron, limit } = req.body;
 
-  if (!queues.has(tenantId) || !queues.get(tenantId).has(queueName)) {
+  if (!queuesMap.has(tenantId) || !queuesMap.get(tenantId).has(queueName)) {
     return res.status(404).json({ message: "Scheduler not found" });
   }
 
-  const queue = queues.get(tenantId).get(queueName);
+  const queue = queuesMap.get(tenantId).get(queueName);
   const job = await queue.getJob(jobId);
 
   if (!job) {
@@ -233,11 +241,11 @@ export const updateJob = async (req, res) => {
 export const deleteJob = async (req, res) => {
   const { tenantId, queueName, jobId } = req.params;
 
-  if (!queues.has(tenantId) || !queues.get(tenantId).has(queueName)) {
+  if (!queuesMap.has(tenantId) || !queuesMap.get(tenantId).has(queueName)) {
     return res.status(404).json({ message: "Scheduler not found" });
   }
 
-  const queue = queues.get(tenantId).get(queueName);
+  const queue = queuesMap.get(tenantId).get(queueName);
   const job = await queue.getJob(jobId);
 
   if (!job) {
@@ -251,11 +259,11 @@ export const deleteJob = async (req, res) => {
 export const pauseJob = async (req, res) => {
   const { tenantId, queueName, jobId } = req.params;
 
-  if (!queues.has(tenantId) || !queues.get(tenantId).has(queueName)) {
+  if (!queuesMap.has(tenantId) || !queuesMap.get(tenantId).has(queueName)) {
     return res.status(404).json({ message: "Scheduler not found" });
   }
 
-  const queue = queues.get(tenantId).get(queueName);
+  const queue = queuesMap.get(tenantId).get(queueName);
   const job = await queue.getJob(jobId);
 
   if (!job) {
@@ -269,11 +277,11 @@ export const pauseJob = async (req, res) => {
 export const resumeJob = async (req, res) => {
   const { tenantId, queueName, jobId } = req.params;
 
-  if (!queues.has(tenantId) || !queues.get(tenantId).has(queueName)) {
+  if (!queuesMap.has(tenantId) || !queuesMap.get(tenantId).has(queueName)) {
     return res.status(404).json({ message: "Scheduler not found" });
   }
 
-  const queue = queues.get(tenantId).get(queueName);
+  const queue = queuesMap.get(tenantId).get(queueName);
   const job = await queue.getJob(jobId);
 
   if (!job) {
@@ -283,3 +291,10 @@ export const resumeJob = async (req, res) => {
   await job.resume();
   res.status(200).json({ message: "Job resumed successfully" });
 };
+
+/**
+ * Expose the Bull-Board router for the UI.
+ */
+export function getBullBoardRouter() {
+  return serverAdapter.getRouter();
+}
