@@ -1,0 +1,24 @@
+{
+  "name": "scheduler",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs": "jsdoc -c jsdoc.json"
+
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@bull-board/api": "^5.21.4",
+    "@bull-board/express": "^5.21.4",
+    "bullmq": "^5.12.6",
+    "express": "^4.19.2",
+    "ioredis": "^5.4.1"
+  },
+  "devDependencies": {
+    "jsdoc": "^4.0.3"
+  }
+}
