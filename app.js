@@ -1,20 +1,25 @@
 import express from "express";
 import schedulerRoutes from "./src/routes/schedulerRoutes.js";
-import { getBullBoardRouter } from "./src/controllers/schedulerController.js";
-
-// import { queues } from "./scheduler.js";
-
-// // Setup Bull-Board
-// const serverAdapter = new ExpressAdapter();
-// serverAdapter.setBasePath("/admin/queues");
-
-// const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
-//   queues: Array.from(queues.values()).map((queue) => new BullMQAdapter(queue)),
-//   serverAdapter: serverAdapter,
-// });
+import {
+  getBullBoardRouter,
+  loadQueuesFromRedis,
+} from "./src/controllers/schedulerController.js";
+import { initializeWorkers } from "./src/worker.js"; // Import worker initialization function
 
 const app = express();
 app.use(express.json());
+
+(async () => {
+  try {
+    await loadQueuesFromRedis();
+    console.log("Queues loaded from Redis successfully.");
+  } catch (err) {
+    console.error("Error loading queues from Redis:", err);
+    process.exit(1); // Exit if loading queues fails
+  }
+})();
+// Initialize workers after loading queues
+await initializeWorkers();
 
 // Example basic authentication middleware
 app.use("/admin/queues", (req, res, next) => {

@@ -8,12 +8,12 @@ import {
   pauseScheduler,
   resumeScheduler,
   listJobs,
-  getJob,
-  createJob,
-  updateJob,
-  deleteJob,
-  pauseJob,
-  resumeJob,
+  getJobDetails,
+  createJobInScheduler,
+  updateJobInScheduler,
+  deleteJobFromScheduler,
+  pauseJobInScheduler,
+  resumeJobInScheduler,
 } from "../controllers/schedulerController.js";
 
 const router = express.Router({ mergeParams: true });
@@ -99,7 +99,7 @@ router.get("/scheduler/:queueName/jobs", listJobs);
  * @param {string} jobId - The ID of the job.
  * @returns {Object} - Job details.
  */
-router.get("/scheduler/:queueName/job/:jobId", getJob);
+router.get("/scheduler/:queueName/job/:jobId", getJobDetails);
 
 /**
  * @route POST /tenant/:tenantId/scheduler/:queueName/job
@@ -114,7 +114,7 @@ router.get("/scheduler/:queueName/job/:jobId", getJob);
  * @param {number} [body.limit] - Optional limit for job invocations.
  * @returns {Object} - Details of the created job.
  */
-router.post("/scheduler/:queueName/job", createJob);
+router.post("/scheduler/:queueName/job", createJobInScheduler);
 
 /**
  * @route PUT /tenant/:tenantId/scheduler/:queueName/job/:jobId
@@ -130,7 +130,7 @@ router.post("/scheduler/:queueName/job", createJob);
  * @param {number} [body.limit] - Optional updated limit for job invocations.
  * @returns {Object} - Details of the updated job.
  */
-router.put("/scheduler/:queueName/job/:jobId", updateJob);
+router.put("/scheduler/:queueName/job/:jobId", updateJobInScheduler);
 
 /**
  * @route DELETE /tenant/:tenantId/scheduler/:queueName/job/:jobId
@@ -140,7 +140,7 @@ router.put("/scheduler/:queueName/job/:jobId", updateJob);
  * @param {string} jobId - The ID of the job.
  * @returns {Object} - Confirmation message.
  */
-router.delete("/scheduler/:queueName/job/:jobId", deleteJob);
+router.delete("/scheduler/:queueName/job/:jobId", deleteJobFromScheduler);
 
 /**
  * @route POST /tenant/:tenantId/scheduler/:queueName/job/:jobId/pause
@@ -150,7 +150,7 @@ router.delete("/scheduler/:queueName/job/:jobId", deleteJob);
  * @param {string} jobId - The ID of the job.
  * @returns {Object} - Confirmation message.
  */
-router.post("/scheduler/:queueName/job/:jobId/pause", pauseJob);
+router.post("/scheduler/:queueName/job/:jobId/pause", pauseJobInScheduler);
 
 /**
  * @route POST /tenant/:tenantId/scheduler/:queueName/job/:jobId/resume
@@ -160,6 +160,6 @@ router.post("/scheduler/:queueName/job/:jobId/pause", pauseJob);
  * @param {string} jobId - The ID of the job.
  * @returns {Object} - Confirmation message.
  */
-router.post("/scheduler/:queueName/job/:jobId/resume", resumeJob);
+router.post("/scheduler/:queueName/job/:jobId/resume", resumeJobInScheduler);
 
 export default router;
