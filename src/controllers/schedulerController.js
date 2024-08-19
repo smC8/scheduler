@@ -157,7 +157,7 @@ export const updateScheduler = async (req, res) => {
   }
 
   // Pause the existing scheduler
-  const queue = queuesMap.get(tenantId).get(queueName);
+  const queue = await queuesMap.get(tenantId).get(queueName);
   await pauseQueue(queue);
 
   // Rename the queue in the map

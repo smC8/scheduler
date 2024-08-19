@@ -33,7 +33,7 @@ router.get("/schedulers", listSchedulers);
  * @param {string} queueName - The name of the scheduler.
  * @returns {Object[]} - Array of job details.
  */
-router.get("/scheduler/:queueName", getScheduler);
+router.get("/schedulers/:queueName", getScheduler);
 
 /**
  * @route POST /tenant/:tenantId/scheduler
@@ -43,7 +43,7 @@ router.get("/scheduler/:queueName", getScheduler);
  * @param {string} body.queueName - The name of the scheduler.
  * @returns {Object} - Confirmation message.
  */
-router.post("/scheduler", createScheduler);
+router.post("/schedulers", createScheduler);
 
 /**
  * @route PUT /tenant/:tenantId/scheduler/:queueName
@@ -53,7 +53,7 @@ router.post("/scheduler", createScheduler);
  * @param {Object} body - Request body with updated details.
  * @returns {Object} - Confirmation message.
  */
-router.put("/scheduler/:queueName", updateScheduler);
+router.put("/schedulers/:queueName", updateScheduler);
 
 /**
  * @route DELETE /tenant/:tenantId/scheduler/:queueName
@@ -62,7 +62,7 @@ router.put("/scheduler/:queueName", updateScheduler);
  * @param {string} queueName - The name of the scheduler.
  * @returns {Object} - Confirmation message.
  */
-router.delete("/scheduler/:queueName", deleteScheduler);
+router.delete("/schedulers/:queueName", deleteScheduler);
 
 /**
  * @route POST /tenant/:tenantId/scheduler/:queueName/pause
@@ -71,7 +71,7 @@ router.delete("/scheduler/:queueName", deleteScheduler);
  * @param {string} queueName - The name of the scheduler.
  * @returns {Object} - Confirmation message.
  */
-router.post("/scheduler/:queueName/pause", pauseScheduler);
+router.post("/schedulers/:queueName/pause", pauseScheduler);
 
 /**
  * @route POST /tenant/:tenantId/scheduler/:queueName/resume
@@ -80,7 +80,7 @@ router.post("/scheduler/:queueName/pause", pauseScheduler);
  * @param {string} queueName - The name of the scheduler.
  * @returns {Object} - Confirmation message.
  */
-router.post("/scheduler/:queueName/resume", resumeScheduler);
+router.post("/schedulers/:queueName/resume", resumeScheduler);
 
 /**
  * @route GET /tenant/:tenantId/scheduler/:queueName/jobs
@@ -89,7 +89,7 @@ router.post("/scheduler/:queueName/resume", resumeScheduler);
  * @param {string} queueName - The name of the scheduler.
  * @returns {Object[]} - Array of job details.
  */
-router.get("/scheduler/:queueName/jobs", listJobs);
+router.get("/schedulers/:queueName/jobs", listJobs);
 
 /**
  * @route GET /tenant/:tenantId/scheduler/:queueName/job/:jobId
@@ -99,7 +99,7 @@ router.get("/scheduler/:queueName/jobs", listJobs);
  * @param {string} jobId - The ID of the job.
  * @returns {Object} - Job details.
  */
-router.get("/scheduler/:queueName/job/:jobId", getJobDetails);
+router.get("/schedulers/:queueName/jobs/:jobId", getJobDetails);
 
 /**
  * @route POST /tenant/:tenantId/scheduler/:queueName/job
@@ -114,7 +114,7 @@ router.get("/scheduler/:queueName/job/:jobId", getJobDetails);
  * @param {number} [body.limit] - Optional limit for job invocations.
  * @returns {Object} - Details of the created job.
  */
-router.post("/scheduler/:queueName/job", createJobInScheduler);
+router.post("/schedulers/:queueName/jobs", createJobInScheduler);
 
 /**
  * @route PUT /tenant/:tenantId/scheduler/:queueName/job/:jobId
@@ -130,7 +130,7 @@ router.post("/scheduler/:queueName/job", createJobInScheduler);
  * @param {number} [body.limit] - Optional updated limit for job invocations.
  * @returns {Object} - Details of the updated job.
  */
-router.put("/scheduler/:queueName/job/:jobId", updateJobInScheduler);
+router.put("/schedulers/:queueName/jobs/:jobId", updateJobInScheduler);
 
 /**
  * @route DELETE /tenant/:tenantId/scheduler/:queueName/job/:jobId
@@ -140,7 +140,7 @@ router.put("/scheduler/:queueName/job/:jobId", updateJobInScheduler);
  * @param {string} jobId - The ID of the job.
  * @returns {Object} - Confirmation message.
  */
-router.delete("/scheduler/:queueName/job/:jobId", deleteJobFromScheduler);
+router.delete("/schedulers/:queueName/jobs/:jobId", deleteJobFromScheduler);
 
 /**
  * @route POST /tenant/:tenantId/scheduler/:queueName/job/:jobId/pause
@@ -150,7 +150,7 @@ router.delete("/scheduler/:queueName/job/:jobId", deleteJobFromScheduler);
  * @param {string} jobId - The ID of the job.
  * @returns {Object} - Confirmation message.
  */
-router.post("/scheduler/:queueName/job/:jobId/pause", pauseJobInScheduler);
+router.post("/schedulers/:queueName/jobs/:jobId/pause", pauseJobInScheduler);
 
 /**
  * @route POST /tenant/:tenantId/scheduler/:queueName/job/:jobId/resume
@@ -160,6 +160,6 @@ router.post("/scheduler/:queueName/job/:jobId/pause", pauseJobInScheduler);
  * @param {string} jobId - The ID of the job.
  * @returns {Object} - Confirmation message.
  */
-router.post("/scheduler/:queueName/job/:jobId/resume", resumeJobInScheduler);
+router.post("/schedulers/:queueName/jobs/:jobId/resume", resumeJobInScheduler);
 
 export default router;
