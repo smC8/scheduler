@@ -17,7 +17,12 @@ import {
   resumeJob,
 } from "../scheduler.js";
 
-const redis = new Redis();
+// const redis = new Redis(
+//   "redis://default:password@redis-host:port"
+// );
+
+const redis = new Redis("redis://redis:6379");
+
 const queuesMap = new Map();
 
 // Setup Bull-Board

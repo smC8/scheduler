@@ -1,7 +1,11 @@
 import { Queue, Worker, connection } from "./bullmq.config.js";
 import Redis from "ioredis";
 
-const redis = new Redis();
+// const redis = new Redis(
+//   "redis://default:password@redis-host:port"
+// );
+
+const redis = new Redis("redis://redis:6379");
 
 // A Map to store queues associated with different tenants
 const queues = new Map();
@@ -17,10 +21,11 @@ export async function initializeTenantQueue(tenantId, queueName) {
   const queuName = `${tenantId}-${queueName}`;
 
   const taskQueue = new Queue(queuName, { connection });
-  // console.log("connection-----", connection);
+  // console.log('connection-----', connection)
 
   // Store the queue in the map using a unique key
   queues.set(`${tenantId}:${queueName}`, taskQueue);
+  // console.log("queues======", queues);
 
   // Persist the queue mapping in Redis
   await redis.hset("tenantQueues", `${tenantId}:${queueName}`, queuName);

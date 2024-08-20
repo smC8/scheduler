@@ -8,9 +8,9 @@ services:
     networks:
       - app-network      
 
-  node-app:
+  worker:
     build: .
-    container_name: node-app
+    container_name: worker
     ports:
       - "3002:3002"
     depends_on:
@@ -23,5 +23,5 @@ services:
 
 networks:
   app-network:
-    # driver: bridge
-    external: true
+    driver: bridge
+    # external: true
