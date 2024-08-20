@@ -17,6 +17,7 @@ export async function initializeTenantQueue(tenantId, queueName) {
   const queuName = `${tenantId}-${queueName}`;
 
   const taskQueue = new Queue(queuName, { connection });
+  // console.log("connection-----", connection);
 
   // Store the queue in the map using a unique key
   queues.set(`${tenantId}:${queueName}`, taskQueue);

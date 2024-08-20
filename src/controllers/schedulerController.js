@@ -62,7 +62,7 @@ export async function loadQueuesFromRedis() {
 }
 
 // Call this function when the application starts to load existing queues.
-loadQueuesFromRedis();
+// loadQueuesFromRedis();
 
 /**
  * List all schedulers for a tenant.
