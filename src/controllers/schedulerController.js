@@ -1,10 +1,10 @@
 import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter.js";
 import { ExpressAdapter } from "@bull-board/express";
-import Redis from "ioredis";
+import { connection } from "../config/bullmq.config.js";
+import { initializeWorker, disconnectWorker } from "../services/worker.js";
 import {
   initializeTenantQueue,
-  initializeWorker,
   pauseQueue,
   resumeQueue,
   deleteQueue,
@@ -15,13 +15,7 @@ import {
   deleteJob,
   pauseJob,
   resumeJob,
-} from "../scheduler.js";
-
-// const redis = new Redis(
-//   "redis://default:password@redis-host:port"
-// );
-
-const redis = new Redis("redis://redis:6379");
+} from "../services/scheduler.js";
 
 const queuesMap = new Map();
 
@@ -29,7 +23,7 @@ const queuesMap = new Map();
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath("/admin/queues");
 
-const { addQueue } = createBullBoard({
+const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
   queues: Array.from(queuesMap.values()).map(
     (queue) => new BullMQAdapter(queue)
   ),
@@ -41,10 +35,10 @@ const { addQueue } = createBullBoard({
  * @returns {Promise<void>}
  */
 export async function loadQueuesFromRedis() {
-  const tenantQueueKeys = await redis.keys("tenantQueue:*");
+  const tenantQueueKeys = await connection.keys("tenantQueue:*");
   for (const key of tenantQueueKeys) {
     const tenantId = key.split(":")[1];
-    const queueNames = await redis.smembers(key);
+    const queueNames = await connection.smembers(key);
 
     if (!queuesMap.has(tenantId)) {
       queuesMap.set(tenantId, new Map());
@@ -131,7 +125,7 @@ export const createScheduler = async (req, res) => {
   queuesMap.get(tenantId).set(queueName, queue);
 
   // Persist the queue information in Redis
-  await redis.sadd(`tenantQueue:${tenantId}`, queueName);
+  await connection.sadd(`tenantQueue:${tenantId}`, queueName);
 
   // Initialize worker for the new queue
   initializeWorker(queue);
@@ -171,8 +165,8 @@ export const updateScheduler = async (req, res) => {
   queuesMap.get(tenantId).set(newQueueName, updatedQueue);
 
   // Update Redis with the new queue name
-  await redis.srem(`tenantQueue:${tenantId}`, queueName);
-  await redis.sadd(`tenantQueue:${tenantId}`, newQueueName);
+  await connection.srem(`tenantQueue:${tenantId}`, queueName);
+  await connection.sadd(`tenantQueue:${tenantId}`, newQueueName);
 
   res.status(200).json({ message: "Scheduler updated successfully" });
 };
@@ -194,11 +188,26 @@ export const deleteScheduler = async (req, res) => {
   }
 
   const queue = queuesMap.get(tenantId).get(queueName);
-  await deleteQueue(queue);
+
+  const x = await queue.getWorkers();
+  console.log("RemovedWorkerName========", x[0].name);
+
+  const y = await queue.getWorkersCount();
+  console.log("workers count========", y);
+
+  // Disconnect worker for the queue
+  disconnectWorker(queue);
+
+  await deleteQueue(queue, tenantId, queueName);
   queuesMap.get(tenantId).delete(queueName);
 
   // Remove the queue information from Redis
-  await redis.srem(`tenantQueue:${tenantId}`, queueName);
+  await connection.srem(`tenantQueue:${tenantId}`, queueName);
+
+  // Update Bull-Board with the new queue
+  // addQueue(new BullMQAdapter(queue));
+  console.log("QNAME====", `${tenantId}-${queueName}`);
+  removeQueue(`${tenantId}-${queueName}`);
 
   res.status(200).json({ message: "Scheduler deleted successfully" });
 };

@@ -1,11 +1,4 @@
-import { Queue, Worker, connection } from "./bullmq.config.js";
-import Redis from "ioredis";
-
-// const redis = new Redis(
-//   "redis://default:password@redis-host:port"
-// );
-
-const redis = new Redis("redis://redis:6379");
+import { Queue, connection } from "../config/bullmq.config.js";
 
 // A Map to store queues associated with different tenants
 const queues = new Map();
@@ -28,33 +21,7 @@ export async function initializeTenantQueue(tenantId, queueName) {
   // console.log("queues======", queues);
 
   // Persist the queue mapping in Redis
-  await redis.hset("tenantQueues", `${tenantId}:${queueName}`, queuName);
-
-  // // Create a worker to process jobs
-  // const worker = new Worker(
-  //   queuName,
-  //   async (job) => {
-  //     // Define job processing logic here
-  //     console.log(
-  //       `Processing job ${job.id} in queue ${queuName} for tenant ${tenantId}`
-  //     );
-  //     // Process the task (job data will contain the task details)
-  //     console.log(`Processing job for tenant ${tenantId}:`, job.data);
-
-  //     // Simulate task execution (replace with actual task logic)
-  //     await new Promise((resolve) => setTimeout(resolve, 1000));
-  //     console.log(`Job completed for tenant ${tenantId}:`, job.id);
-  //   },
-  //   { connection }
-  // );
-
-  // worker.on("completed", (job) => {
-  //   console.log(`${job.id} has completed!`);
-  // });
-
-  // worker.on("failed", (job, err) => {
-  //   console.log(`${job.id} has failed with ${err.message}`);
-  // });
+  await connection.hset("tenantQueues", `${tenantId}:${queueName}`, queuName);
 
   return taskQueue;
 }
@@ -64,8 +31,8 @@ export async function initializeTenantQueue(tenantId, queueName) {
  * @returns {Map} - A Map of all queues.
  */
 export async function loadQueues() {
-  const tenantQueues = await redis.hgetall("tenantQueues");
-  const queues = new Map();
+  const tenantQueues = await connection.hgetall("tenantQueues");
+  // const queues = new Map();
 
   for (const key in tenantQueues) {
     // Re-instantiate the queue as a BullMQ Queue instance
@@ -73,35 +40,9 @@ export async function loadQueues() {
     const queue = new Queue(queueName, { connection });
     queues.set(key, queue);
   }
+  console.log("QueueMAP for board=========", queues.size);
 
   return queues;
-}
-
-/**
- * Initialize a worker for a specific queue.
- * @param {Queue} queue - The queue for which to create a worker.
- * @returns {Worker} - The initialized worker.
- */
-export function initializeWorker(queue) {
-  const worker = new Worker(
-    queue.name,
-    async (job) => {
-      // Process the job here
-      console.log(`Processing job ${job.id} from queue ${queue.name}`);
-      // Add job processing logic here
-    },
-    { connection }
-  );
-
-  worker.on("completed", (job) => {
-    console.log(`Job ${job.id} has been completed`);
-  });
-
-  worker.on("failed", (job, err) => {
-    console.error(`Job ${job.id} failed with error ${err.message}`);
-  });
-
-  return worker;
 }
 
 /**
@@ -130,9 +71,21 @@ export const resumeQueue = async (queue) => {
  * @param {Queue} queue - The BullMQ queue to delete.
  * @returns {Promise<void>}
  */
-export const deleteQueue = async (queue) => {
+export const deleteQueue = async (queue, tenantId, queueName) => {
   await queue.close();
-  await queue.remove();
+  // await queue.remove();
+  // Removes everything but only if there are no active jobs (unnless overridden, as shown here)
+  await queue.obliterate({ force: true });
+
+  // Remove the queue mapping from Redis
+  await connection.hdel("tenantQueues", `${tenantId}:${queueName}`);
+  // Remove the queue information from Redis
+  await connection.srem(`tenantQueue:${tenantId}`, queueName);
+  // Remove other redis keys associated w/ this queue
+
+  // Remove the queue from the map using the unique key
+  queues.delete(`${tenantId}:${queueName}`);
+  // console.log("queues======", queues);
 };
 
 /**
