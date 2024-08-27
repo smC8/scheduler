@@ -1,10 +1,10 @@
 import express from "express";
-import schedulerRoutes from "./src/routes/schedulerRoutes.js";
+import schedulerRoutes from "./routes/schedulerRoutes.js";
 import {
   getBullBoardRouter,
   loadQueuesFromRedis,
-} from "./src/controllers/schedulerController.js";
-import { initializeWorkers } from "./src/worker.js"; // Import worker initialization function
+} from "./controllers/schedulerController.js";
+import { initializeWorkers } from "./services/worker.js"; // Import worker initialization function
 
 const app = express();
 app.use(express.json());
@@ -43,6 +43,8 @@ app.use("/admin/queues", getBullBoardRouter());
 
 // Set up routes
 app.use("/tenant/:tenantId", schedulerRoutes);
+
+// export default app;
 
 // Start the server
 const PORT = process.env.PORT || 3002;
