@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM node:18-alpine AS build
+FROM node:22-alpine AS build
 
 # Set working directory
 WORKDIR /app
@@ -14,7 +14,7 @@ RUN npm install --production
 COPY . .
 
 # Stage 2: Create the production image
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Set working directory
 WORKDIR /app
@@ -29,4 +29,4 @@ EXPOSE 3002
 ENV NODE_ENV=production
 
 # Start the application
-CMD ["node", "app.js"]
+CMD ["npm", "start"]

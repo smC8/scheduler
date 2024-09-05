@@ -1,6 +1,6 @@
 import { Worker, connection } from "../config/bullmq.config.js";
 import { loadQueues } from "./scheduler.js";
-
+import axios from 'axios';
 // A Map to store workers associated with queues
 const workersMap = new Map();
 
@@ -17,6 +17,18 @@ export async function initializeWorkers() {
         // Process the job here
         console.log(`Processing job ${job.id} from queue ${queue.name}`);
         // Add job processing logic here
+        
+        await axios.post('https://enyp6wdw75ja.x.pipedream.net', {
+          jobID: job.id,
+          firstName: 'Fred',
+          lastName: 'Flintstone',
+          orders: [1, 2, 3]
+        }, {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+      })
+
       },
       { connection }
     );
